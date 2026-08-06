@@ -1,0 +1,39 @@
+#!/bin/sh
+set -u
+
+auto_command="$HOME/.local/bin/codex-desktop-auto"
+
+if [ "${1-}" = "--self-test" ]; then
+  if [ ! -x "$auto_command" ]; then
+    printf 'Missing launcher: %s\n' "$auto_command" >&2
+    exit 1
+  fi
+  printf '%s\n' 'Codex Auto desktop launcher self-test: ok'
+  exit 0
+fi
+
+show_error() {
+  error_message=$1
+  /usr/bin/osascript \
+    -e 'on run argv' \
+    -e 'display alert "Codex Auto 启动失败" message (item 1 of argv) as critical buttons {"好"} default button "好"' \
+    -e 'end run' \
+    "$error_message" >/dev/null 2>&1
+}
+
+if [ ! -x "$auto_command" ]; then
+  show_error "找不到可执行启动器：$auto_command"
+  exit 1
+fi
+
+launch_output=$("$auto_command" --debug 2>&1)
+launch_status=$?
+
+if [ "$launch_status" -ne 0 ]; then
+  if [ -z "$launch_output" ]; then
+    launch_output="启动器返回错误代码 $launch_status。"
+  fi
+  show_error "$launch_output"
+fi
+
+exit "$launch_status"

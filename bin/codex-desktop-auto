@@ -1,0 +1,90 @@
+#!/bin/sh
+set -eu
+
+app_bundle=${CODEX_DESKTOP_APP_PATH:-/Applications/ChatGPT.app}
+info_plist="$app_bundle/Contents/Info.plist"
+real_codex="$app_bundle/Contents/Resources/codex"
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_proxy="$script_dir/../lib/codex-desktop-proxy"
+installed_root=${CODEX_AUTO_DATA_DIR:-"$HOME/.local/share/codex-auto-tools"}
+installed_proxy="$installed_root/lib/codex-desktop-proxy"
+workspace=
+debug=
+
+if [ -x "$repo_proxy" ]; then
+  proxy=$repo_proxy
+elif [ -x "$installed_proxy" ]; then
+  proxy=$installed_proxy
+else
+  printf '%s\n' 'Desktop proxy is missing; run scripts/install.sh again.' >&2
+  exit 1
+fi
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -h|--help)
+      printf '%s\n' \
+        'Usage: codex-desktop-auto [--debug] [WORKSPACE]' \
+        '' \
+        'Launch Codex Desktop with capacity and Reconnecting recovery enabled.' \
+        'Codex Desktop must be fully quit before running this command.'
+      exit 0
+      ;;
+    --debug)
+      debug=1
+      ;;
+    *)
+      if [ -n "$workspace" ]; then
+        printf '%s\n' 'codex-desktop-auto accepts at most one workspace path' >&2
+        exit 2
+      fi
+      workspace=$1
+      ;;
+  esac
+  shift
+done
+
+if [ ! -x "$real_codex" ]; then
+  printf 'Bundled Codex executable not found: %s\n' "$real_codex" >&2
+  exit 1
+fi
+if [ ! -f "$info_plist" ]; then
+  printf 'Desktop application metadata not found: %s\n' "$info_plist" >&2
+  exit 1
+fi
+
+app_executable_name=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$info_plist")
+bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$info_plist")
+app_executable="$app_bundle/Contents/MacOS/$app_executable_name"
+
+if /usr/bin/pgrep -f "$app_executable" >/dev/null 2>&1; then
+  printf '%s\n' \
+    'Codex Desktop is already running.' \
+    'Fully quit it first, then run codex-desktop-auto again.' >&2
+  exit 2
+fi
+
+set -- -b "$bundle_id" \
+  --env "CODEX_CLI_PATH=$proxy" \
+  --env "CODEX_DESKTOP_REAL_CLI=$real_codex"
+
+if [ -n "$debug" ]; then
+  set -- "$@" --env CODEX_DESKTOP_AUTO_DEBUG=1
+fi
+if [ "${CODEX_CAPACITY_RETRY_MAX+x}" = x ]; then
+  set -- "$@" --env "CODEX_CAPACITY_RETRY_MAX=$CODEX_CAPACITY_RETRY_MAX"
+fi
+if [ "${CODEX_CAPACITY_RETRY_DELAY_MS+x}" = x ]; then
+  set -- "$@" --env "CODEX_CAPACITY_RETRY_DELAY_MS=$CODEX_CAPACITY_RETRY_DELAY_MS"
+fi
+if [ "${CODEX_RECONNECT_STALL_MS+x}" = x ]; then
+  set -- "$@" --env "CODEX_RECONNECT_STALL_MS=$CODEX_RECONNECT_STALL_MS"
+fi
+if [ "${CODEX_RECONNECT_RECOVERY_MAX+x}" = x ]; then
+  set -- "$@" --env "CODEX_RECONNECT_RECOVERY_MAX=$CODEX_RECONNECT_RECOVERY_MAX"
+fi
+if [ -n "$workspace" ]; then
+  set -- "$@" "$workspace"
+fi
+
+exec /usr/bin/open "$@"

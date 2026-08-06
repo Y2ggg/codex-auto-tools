@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_entry="$script_dir/../lib/codex-capacity-retry.mjs"
+installed_root=${CODEX_AUTO_DATA_DIR:-"$HOME/.local/share/codex-auto-tools"}
+installed_entry="$installed_root/lib/codex-capacity-retry.mjs"
+
+if [ -f "$repo_entry" ]; then
+  exec node "$repo_entry" "$@"
+fi
+if [ -f "$installed_entry" ]; then
+  exec node "$installed_entry" "$@"
+fi
+
+printf '%s\n' 'codex-auto runtime is missing; run scripts/install.sh again.' >&2
+exit 1
