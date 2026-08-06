@@ -1,34 +1,36 @@
 # Codex Auto Tools
 
-两个非官方的小工具，用于增强 Codex CLI 和 Codex Desktop 的自动恢复能力。
+English | [简体中文](README.zh-CN.md)
 
-## 功能
+Two unofficial utilities that add automatic recovery to Codex CLI and Codex Desktop.
+
+## Features
 
 ### `codex-auto`
 
-- 遇到 `Selected model is at capacity` 时自动在 `medium` 与 `xhigh` 之间切换。
-- 在同一个 thread 中自动继续未完成的任务。
-- 检测长时间 Reconnecting，自动中断卡住的 turn 后继续。
-- 多个 CLI 实例各自使用独立 app-server，互不干扰。
+- Toggles between `medium` and `xhigh` when the selected model is at capacity.
+- Continues unfinished work in the same thread.
+- Detects prolonged Reconnecting states, interrupts the stalled turn, and continues automatically.
+- Runs each CLI instance with an independent app-server so multiple terminals do not interfere with one another.
 
 ### `codex-desktop-auto`
 
-- 通过 Codex Desktop 已有的 `CODEX_CLI_PATH` 注入 stdio JSONL 透明代理。
-- 提供与 CLI 相同的容量错误和 Reconnecting 自动恢复。
-- 普通消息、审批和用户输入保持原样转发。
-- 不修改或重新签名原始 Codex Desktop 应用。
-- 可创建桌面上的 `Codex Auto.app`，双击即可启动。
+- Injects a transparent stdio JSONL proxy through Codex Desktop's existing `CODEX_CLI_PATH` entry point.
+- Provides the same capacity-error and Reconnecting recovery as the CLI tool.
+- Forwards normal messages, approvals, and user input unchanged.
+- Does not modify or re-sign the original Codex Desktop application.
+- Can create a desktop `Codex Auto.app` launcher for one-click startup.
 
-## 环境要求
+## Requirements
 
-- macOS 12 或更高版本。
-- Node.js 18 或更高版本。
-- 已安装并登录 Codex CLI。
-- Desktop 功能需要 `/Applications/ChatGPT.app` 中的 Codex Desktop。
+- macOS 12 or later.
+- Node.js 18 or later.
+- Codex CLI installed and authenticated.
+- The Desktop integration requires Codex Desktop at `/Applications/ChatGPT.app`.
 
-当前协议兼容性在 Codex Desktop `0.147.0-alpha.1.2` 上完成验证。Desktop 内部协议或启动入口未来可能发生变化。
+Protocol compatibility has been verified with Codex Desktop `0.147.0-alpha.1.2`. Internal Desktop protocols and launch entry points may change in future releases.
 
-## 安装
+## Installation
 
 ```bash
 git clone https://github.com/Y2ggg/codex-auto-tools.git
@@ -36,45 +38,45 @@ cd codex-auto-tools
 ./scripts/install.sh
 ```
 
-默认安装位置：
+Default installation paths:
 
-- 命令：`~/.local/bin/codex-auto`、`~/.local/bin/codex-desktop-auto`
-- 运行文件：`~/.local/share/codex-auto-tools/lib`
-- 桌面启动器：`~/Desktop/Codex Auto.app`
+- Commands: `~/.local/bin/codex-auto` and `~/.local/bin/codex-desktop-auto`
+- Runtime files: `~/.local/share/codex-auto-tools/lib`
+- Desktop launcher: `~/Desktop/Codex Auto.app`
 
-不创建桌面图标：
+Install without creating the desktop launcher:
 
 ```bash
 ./scripts/install.sh --no-desktop-icon
 ```
 
-确保 `~/.local/bin` 已加入 `PATH`。
+Make sure `~/.local/bin` is included in `PATH`.
 
-## 使用
+## Usage
 
-CLI：
+CLI:
 
 ```bash
 codex-auto
 codex-auto --self-test
 ```
 
-Desktop 必须先完全退出普通 Codex Desktop，然后运行：
+Fully quit the regular Codex Desktop application before launching the wrapped version:
 
 ```bash
 codex-desktop-auto --debug
 codex-desktop-auto --debug /path/to/workspace
 ```
 
-也可以直接双击桌面的 `Codex Auto.app`。只有通过这个命令或桌面图标启动时，Desktop 自动恢复才会生效。
+You can also double-click `Codex Auto.app` on the desktop. Desktop recovery is active only when Codex is launched through this command or the desktop launcher.
 
-日志位置：
+Log file:
 
 ```text
 ~/.codex/desktop-auto/codex-desktop-auto.log
 ```
 
-## 配置
+## Configuration
 
 ```bash
 CODEX_CAPACITY_RETRY_MAX=6
@@ -84,17 +86,17 @@ CODEX_RECONNECT_RECOVERY_MAX=3
 CODEX_CAPACITY_RETRY_DEBUG=1
 ```
 
-Desktop 调试日志通过 `codex-desktop-auto --debug` 开启。
+Use `codex-desktop-auto --debug` to enable Desktop proxy debug logging.
 
-## 恢复策略
+## Recovery behavior
 
-- 容量错误：等待失败 turn 完成，切换 reasoning effort，再启动续跑 turn。
-- Reconnecting：默认等待 120 秒；仍无流输出则执行 `turn/interrupt`，等待完成后在同一 thread 续跑。
-- Reconnecting 恢复保持当前 reasoning effort。
-- 用户手动中断或开始新 turn 时，自动恢复会取消。
-- 容量错误默认最多重试 6 次，Reconnecting 默认最多恢复 3 次。
+- Capacity error: waits for the failed turn to complete, switches the reasoning effort, and starts a continuation turn.
+- Reconnecting: waits 120 seconds by default; if no stream output resumes, sends `turn/interrupt`, waits for completion, and continues in the same thread.
+- Reconnecting recovery preserves the current reasoning effort.
+- A manual interrupt or a newer user turn cancels automatic recovery.
+- Capacity failures retry up to 6 times by default; Reconnecting recovery runs up to 3 times.
 
-## 本地验证
+## Local verification
 
 ```bash
 node --check lib/codex-capacity-retry.mjs
@@ -103,9 +105,9 @@ node --check lib/codex-desktop-proxy.mjs
 ./lib/codex-desktop-proxy --desktop-auto-self-test
 ```
 
-## 说明
+## Disclaimer
 
-这是一个非官方实验工具，依赖 Codex app-server 和 Desktop 当前可用的本地接口。升级 Codex 后建议先运行自测。
+This is an unofficial experimental project that relies on the current Codex app-server and locally available Desktop interfaces. Run the self-tests after upgrading Codex.
 
 ## License
 
