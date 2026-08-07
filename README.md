@@ -79,8 +79,9 @@ codex-desktop-auto --debug /path/to/workspace
 ## 配置
 
 ```bash
-CODEX_CAPACITY_RETRY_MAX=6
+CODEX_CAPACITY_RETRY_MAX=12
 CODEX_CAPACITY_RETRY_DELAY_MS=1000
+CODEX_CAPACITY_RETRY_MAX_DELAY_MS=60000
 CODEX_RECONNECT_STALL_MS=20000
 CODEX_RECONNECT_RECOVERY_MAX=3
 CODEX_CAPACITY_RETRY_DEBUG=1
@@ -91,10 +92,11 @@ Desktop 调试日志通过 `codex-desktop-auto --debug` 开启。
 ## 恢复策略
 
 - 容量错误：等待失败 turn 完成，切换 reasoning effort，再启动续跑 turn。
+- 容量重试采用指数退避：默认等待 1、2、4、8、16、32、60、60…秒，达到最大间隔后封顶。
 - Reconnecting：默认等待 20 秒；期间流恢复则继续原 Turn；若 Turn 先以失败结束则立即续跑，否则执行 `turn/interrupt` 后在同一 thread 续跑。
 - Reconnecting 恢复保持当前 reasoning effort。
-- 用户手动中断或开始新 turn 时，自动恢复会取消。
-- 容量错误默认最多重试 6 次，Reconnecting 默认最多恢复 3 次。
+- 用户手动中断或开始新 turn 时，旧的自动恢复会取消；手动开始新 turn 还会重置该 thread 的恢复次数。
+- 容量错误默认最多重试 12 次，Reconnecting 默认最多恢复 3 次。
 
 ## 本地验证
 

@@ -79,8 +79,9 @@ Log file:
 ## Configuration
 
 ```bash
-CODEX_CAPACITY_RETRY_MAX=6
+CODEX_CAPACITY_RETRY_MAX=12
 CODEX_CAPACITY_RETRY_DELAY_MS=1000
+CODEX_CAPACITY_RETRY_MAX_DELAY_MS=60000
 CODEX_RECONNECT_STALL_MS=20000
 CODEX_RECONNECT_RECOVERY_MAX=3
 CODEX_CAPACITY_RETRY_DEBUG=1
@@ -91,10 +92,11 @@ Use `codex-desktop-auto --debug` to enable Desktop proxy debug logging.
 ## Recovery behavior
 
 - Capacity error: waits for the failed turn to complete, switches the reasoning effort, and starts a continuation turn.
+- Capacity retries use exponential backoff: by default they wait 1, 2, 4, 8, 16, 32, 60, 60… seconds, capped at the maximum delay.
 - Reconnecting: waits 20 seconds by default; if the Turn fails first, continues immediately; otherwise, if no stream output resumes, sends `turn/interrupt` and continues in the same thread.
 - Reconnecting recovery preserves the current reasoning effort.
-- A manual interrupt or a newer user turn cancels automatic recovery.
-- Capacity failures retry up to 6 times by default; Reconnecting recovery runs up to 3 times.
+- A manual interrupt or a newer user turn cancels the old automatic recovery; a newly started user turn also resets that thread's recovery counters.
+- Capacity failures retry up to 12 times by default; Reconnecting recovery runs up to 3 times.
 
 ## Local verification
 
