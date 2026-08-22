@@ -100,12 +100,19 @@ Use `codex-desktop-auto --debug` to enable Desktop proxy debug logging.
 
 ## Local verification
 
+This repository does not use GitHub Actions, automated Dependabot updates, or any other hosted CI/CD. By default, GitHub is used only for source storage, version control, code collaboration, branches, tags, and releases. A push, pull request, or tag does not automatically run builds, tests, packaging, or release verification.
+
+Run all verification locally and manually as needed:
+
 ```bash
+./scripts/verify-repository.sh
 node --check lib/codex-capacity-retry.mjs
 node --check lib/codex-desktop-proxy.mjs
 ./bin/codex-auto --self-test
 ./lib/codex-desktop-proxy --desktop-auto-self-test
 ```
+
+Generate and verify release assets locally, then upload them manually to the GitHub Release. Explicit user authorization is required before enabling any remote build, test, dependency-update, packaging, deployment, or release automation.
 
 ## Disclaimer
 

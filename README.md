@@ -100,12 +100,19 @@ Desktop 调试日志通过 `codex-desktop-auto --debug` 开启。
 
 ## 本地验证
 
+本仓库不使用 GitHub Actions、Dependabot 自动更新或其他托管 CI/CD。GitHub 默认仅用于代码存储、版本管理、代码协作、分支、tag 和 release；push、pull request 或 tag 不会自动执行构建、测试、打包或发布验证。
+
+所有验证均需在本地按需手动执行：
+
 ```bash
+./scripts/verify-repository.sh
 node --check lib/codex-capacity-retry.mjs
 node --check lib/codex-desktop-proxy.mjs
 ./bin/codex-auto --self-test
 ./lib/codex-desktop-proxy --desktop-auto-self-test
 ```
+
+Release 资产应在本地生成并验证，确认无误后手动上传到 GitHub Release。启用任何远端自动构建、测试、依赖升级、打包、部署或发布流程前，必须先取得用户明确授权。
 
 ## 说明
 
