@@ -2,6 +2,9 @@
 
 [简体中文](README.md) | English
 
+Current implementation: `codex-auto` `0.4.1` and Desktop proxy `0.3.1`. See
+[CHANGELOG.md](CHANGELOG.md) for the detailed changes.
+
 Two unofficial utilities that add automatic recovery to Codex CLI and Codex Desktop.
 
 ## Features
@@ -28,7 +31,7 @@ Two unofficial utilities that add automatic recovery to Codex CLI and Codex Desk
 - Codex CLI installed and authenticated.
 - The Desktop integration requires Codex Desktop at `/Applications/ChatGPT.app`.
 
-Protocol compatibility has been verified with Codex Desktop `0.147.0-alpha.1.2`. Internal Desktop protocols and launch entry points may change in future releases.
+The current implementation has been compatibility-checked against Codex CLI `0.153.4` and the Desktop-bundled CLI `0.150.0-alpha.8`. These are public verification baselines, not hard version pins. The Desktop proxy depends on the current local protocol and launch entry point, so run the self-tests after upgrading either Codex installation.
 
 ## Installation
 
@@ -59,7 +62,10 @@ CLI:
 ```bash
 codex-auto
 codex-auto --self-test
+codex-auto --compat-check
 ```
+
+`codex-auto` passes the current directory explicitly to the remote TUI. This keeps the `Cwd` filter available in the session picker when using `codex-auto resume --all`; an explicit `-C/--cd` value is preserved.
 
 Fully quit the regular Codex Desktop application before launching the wrapped version:
 
@@ -109,6 +115,7 @@ Run all verification locally and manually as needed:
 node --check lib/codex-capacity-retry.mjs
 node --check lib/codex-desktop-proxy.mjs
 ./bin/codex-auto --self-test
+./bin/codex-auto --compat-check
 ./lib/codex-desktop-proxy --desktop-auto-self-test
 ```
 
@@ -116,7 +123,25 @@ Generate and verify release assets locally, then upload them manually to the Git
 
 ## Disclaimer
 
-This is an unofficial experimental project that relies on the current Codex app-server and locally available Desktop interfaces. Run the self-tests after upgrading Codex.
+This is an unofficial experimental project that relies on the current Codex app-server and locally available Desktop interfaces. `codex-auto` preserves user CLI arguments and only adds its local `--remote` endpoint plus a default `--cd`; recovery is implemented by observing RPC notifications and starting continuation turns. The Desktop proxy forwards ordinary JSONL messages unchanged, but intentionally injects RPC requests when recovery is needed.
+
+The project is therefore not pinned to one Codex version, but it is not entirely version-independent either: CLI `--remote`/`--cd`, app-server methods and notifications, and Desktop's `CODEX_CLI_PATH` launch entry point are compatibility boundaries. A Codex upgrade usually needs no synchronized code change; update the adapter only when a self-test fails or one of those boundaries changes. After an upgrade, run:
+
+```bash
+codex --version
+./bin/codex-auto --self-test
+./bin/codex-auto --compat-check
+./lib/codex-desktop-proxy --desktop-auto-self-test
+```
+
+To check the Codex binary bundled with Desktop as well:
+
+```bash
+CODEX_CAPACITY_RETRY_CODEX_BIN=/Applications/ChatGPT.app/Contents/Resources/codex \
+  ./bin/codex-auto --compat-check
+```
+
+Official references: [Codex CLI commands](https://learn.chatgpt.com/docs/developer-commands) | [Codex app-server](https://learn.chatgpt.com/docs/app-server)
 
 ## License
 

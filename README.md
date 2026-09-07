@@ -2,6 +2,9 @@
 
 简体中文 | [English](README.en.md)
 
+当前实现：`codex-auto` `0.4.1`，Desktop proxy `0.3.1`。详细变更见
+[CHANGELOG.md](CHANGELOG.md)。
+
 两个非官方的小工具，用于增强 Codex CLI 和 Codex Desktop 的自动恢复能力。
 
 ## 功能
@@ -28,7 +31,7 @@
 - 已安装并登录 Codex CLI。
 - Desktop 功能需要 `/Applications/ChatGPT.app` 中的 Codex Desktop。
 
-当前协议兼容性在 Codex Desktop `0.147.0-alpha.1.2` 上完成验证。Desktop 内部协议或启动入口未来可能发生变化。
+当前实现已针对 Codex CLI `0.153.4` 和 Desktop 内置 CLI `0.150.0-alpha.8` 完成兼容性验证。这些是公开的验证基线，不是硬编码的版本锁定；Desktop 代理依赖当前本地协议和启动入口，升级任一 Codex 后请先运行自测。
 
 ## 安装
 
@@ -59,7 +62,10 @@ CLI：
 ```bash
 codex-auto
 codex-auto --self-test
+codex-auto --compat-check
 ```
+
+`codex-auto` 会把当前目录显式传给远程 TUI。这样使用 `codex-auto resume --all` 时仍然可以在会话选择器中切换 `Cwd` 筛选；如果已经传入 `-C/--cd`，则保留显式目录。
 
 Desktop 必须先完全退出普通 Codex Desktop，然后运行：
 
@@ -109,6 +115,7 @@ Desktop 调试日志通过 `codex-desktop-auto --debug` 开启。
 node --check lib/codex-capacity-retry.mjs
 node --check lib/codex-desktop-proxy.mjs
 ./bin/codex-auto --self-test
+./bin/codex-auto --compat-check
 ./lib/codex-desktop-proxy --desktop-auto-self-test
 ```
 
@@ -116,7 +123,25 @@ Release 资产应在本地生成并验证，确认无误后手动上传到 GitHu
 
 ## 说明
 
-这是一个非官方实验工具，依赖 Codex app-server 和 Desktop 当前可用的本地接口。升级 Codex 后建议先运行自测。
+这是一个非官方实验工具，依赖 Codex app-server 和 Desktop 当前可用的本地接口。`codex-auto` 会保留用户 CLI 参数，只额外注入本地 `--remote` 和默认 `--cd`；恢复功能通过旁路 RPC 观察和补发续跑请求实现。Desktop 代理会原样转发普通 JSONL 消息，但会在恢复时主动补发 RPC。
+
+因此它不是“只适配一个固定 Codex 版本”，但也不是完全与版本无关：CLI 的 `--remote`、`--cd` 和 app-server 方法/通知属于需要持续观察的接口，Desktop 的 `CODEX_CLI_PATH` 更是本地集成入口。Codex 升级后通常不需要同步改代码；只有自测失败、参数语义变化、app-server 事件字段变化或 Desktop 启动入口变化时才需要迭代。建议升级后手动执行：
+
+```bash
+codex --version
+./bin/codex-auto --self-test
+./bin/codex-auto --compat-check
+./lib/codex-desktop-proxy --desktop-auto-self-test
+```
+
+若要同时检查 Desktop 内置的 Codex 二进制：
+
+```bash
+CODEX_CAPACITY_RETRY_CODEX_BIN=/Applications/ChatGPT.app/Contents/Resources/codex \
+  ./bin/codex-auto --compat-check
+```
+
+相关官方参考：[Codex CLI 命令](https://learn.chatgpt.com/docs/developer-commands) | [Codex app-server](https://learn.chatgpt.com/docs/app-server)
 
 ## License
 
